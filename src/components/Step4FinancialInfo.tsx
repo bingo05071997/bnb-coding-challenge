@@ -30,6 +30,7 @@ export default function Step4FinancialInfo({
       return totalIncome * terms * 0.5 > loanAmount; // Apply validation condition
     }, {
       message: "Loan amount is too high. Please reduce the loan amount or restart with a new person.",
+      path: ["otherCredits"],
     });
 
   const {
@@ -88,6 +89,16 @@ export default function Step4FinancialInfo({
           className="border p-2 w-full"
         />
       </div>
+
+      {errors.monthlySalary || errors.additionalIncome || errors.mortgage || errors.otherCredits ? (
+        <div className="text-red-500">
+          {errors.monthlySalary?.message ||
+            errors.additionalIncome?.message ||
+            errors.mortgage?.message ||
+            errors.otherCredits?.message ||
+            "Loan amount is too high. Please reduce the loan amount or restart with a new person."}
+        </div>
+      ) : null}
 
       <div className="flex justify-between">
         <button
