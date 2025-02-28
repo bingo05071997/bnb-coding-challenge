@@ -5,20 +5,33 @@ import { useNavigate } from "react-router-dom";
 import { FinancialInfo } from "../types";
 import { useWizardForm } from "../hooks/useWizardForm";
 
-const schema = z.object({
-  monthlySalary: z.number().min(1),
-  additionalIncome: z.number().optional(),
-  mortgage: z.number().optional(),
-  otherCredits: z.number().optional(),
-});
-
 export default function Step4FinancialInfo({
   onNext,
 }: {
   onNext: (data: FinancialInfo) => void;
 }) {
+  const { formData } = useWizardForm(); // Access form data (loan amount, terms, etc.)
   const navigate = useNavigate();
-  const { formData, setLastStep } = useWizardForm();
+
+  // Calculate the validation condition
+  const loanAmount = formData.loanRequest.loanAmount;
+  const terms = formData.loanRequest.terms;
+
+  const schema = z
+    .object({
+      monthlySalary: z.number().min(1),
+      additionalIncome: z.number().optional(),
+      mortgage: z.number().optional(),
+      otherCredits: z.number().optional(),
+    })
+    .refine((data) => {
+      const totalIncome = (data.monthlySalary + (data.additionalIncome || 0)) -
+                          (data.mortgage || 0) - (data.otherCredits || 0);
+      return totalIncome * terms * 0.5 > loanAmount; // Apply validation condition
+    }, {
+      message: "Loan amount is too high. Please reduce the loan amount or restart with a new person.",
+    });
+
   const {
     register,
     handleSubmit,
@@ -30,7 +43,6 @@ export default function Step4FinancialInfo({
 
   const onSubmit = (data: FinancialInfo) => {
     onNext(data);
-    setLastStep("/step5");
     navigate("/step5");
   };
 

@@ -5,18 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { LoanRequest } from "../types";
 import { useWizardForm } from "../hooks/useWizardForm";
 
-
-const schema = z
-  .object({
-    loanAmount: z.number().min(10000).max(70000),
-    upfrontPayment: z.number(),
-    terms: z.number().min(10).max(30),
-  })
-  .refine((data) => data.upfrontPayment < data.loanAmount, {
-    message: "Upfront payment must be lower than the loan amount",
-    path: ["upfrontPayment"],
-  });
-
 export default function Step3LoanRequest({
   onNext,
 }: {
@@ -24,13 +12,35 @@ export default function Step3LoanRequest({
 }) {
   const { formData, setLastStep } = useWizardForm();
   const navigate = useNavigate();
+  
+  // Accessing the dateOfBirth from formData to calculate age
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - new Date(formData.personalInfo.dateOfBirth).getFullYear();
+
+  const schema = z
+    .object({
+      loanAmount: z.number().min(10000).max(70000),
+      upfrontPayment: z.number(),
+      terms: z.number().min(10).max(30),
+    })
+    .refine((data) => data.upfrontPayment < data.loanAmount, {
+      message: "Upfront payment must be lower than the loan amount",
+      path: ["upfrontPayment"],
+    })
+    .refine((data) => {
+      return (data.terms / 12 + age) < 80; // Check age and terms
+    }, {
+      message: "Age + loan term must be less than 80 years",
+      path: ["terms"],
+    });
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoanRequest>({
     resolver: zodResolver(schema),
-    defaultValues: formData.loanRequest
+    defaultValues: formData.loanRequest,
   });
 
   const onSubmit = (data: LoanRequest) => {
